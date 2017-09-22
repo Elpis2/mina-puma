@@ -67,14 +67,19 @@ namespace :puma do
 
   def pumactl_command(command)
     cmd =  %{
+      echo "#{fetch(:puma_pid)}"
+      echo "#{fetch(:puma_config)}"
+      echo 'Step 1'
       if [ -e "#{fetch(:puma_pid)}" ]; then
+        echo "#{fetch(:puma_pid)}"
         if [ -e "#{fetch(:puma_config)}" ]; then
+          echo "#{fetch(:puma_config)}"
           cd #{fetch(:puma_root_path)} && #{fetch(:pumactl_cmd)} -F #{fetch(:puma_config)} #{command}
         else
           cd #{fetch(:puma_root_path)} && #{fetch(:pumactl_cmd)} -S #{fetch(:puma_state)} -C "unix://#{fetch(:pumactl_socket)}" --pidfile #{fetch(:puma_pid)} #{command}
         fi
       else
-        echo 'Puma is not running!';
+        echo 'Puma is not running, Great!';
       fi
     }
     command cmd
