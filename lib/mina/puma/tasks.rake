@@ -19,9 +19,9 @@ namespace :puma do
   task :start => :environment do
     puma_port_option = "-p #{fetch(:puma_port)}" if set?(:puma_port)
 
-    comment "Starting Puma111..."
+    comment "Starting Puma..."
     command %[
-      if [ -e "#{fetch(:puma_pid)}" ]; then
+      if [ -e "#{fetch(:puma_socket)}" ]; then
         echo 'Puma is already running!';
       else
         if [ -e "#{fetch(:puma_config)}" ]; then
@@ -35,9 +35,9 @@ namespace :puma do
 
   desc 'Stop puma'
   task stop: :environment do
-    comment "Stopping Puma111..."
+    comment "Stopping Puma..."
     pumactl_command 'stop'
-    command %[rm -f '#{fetch(:pumactl_socket)}']
+    #command %[rm -f '#{fetch(:pumactl_socket)}']
   end
 
   desc 'Restart puma'
@@ -65,15 +65,12 @@ namespace :puma do
     pumactl_command 'status'
   end
 
+  # Updated this to look for puma_pid and not puma_socket since we are using puma with ports and not sockets
+  # This prevented this from having any effect, and puma would just ignore the commands
   def pumactl_command(command)
     cmd =  %{
-      echo "#{fetch(:puma_pid)}"
-      echo "#{fetch(:puma_config)}"
-      echo 'Step 1'
-      if [ -e "#{fetch(:puma_pid)}" ]; then
-        echo "#{fetch(:puma_pid)}"
+      if [ -e "#{fetch(:puma_pid)}" ]; then 
         if [ -e "#{fetch(:puma_config)}" ]; then
-          echo "#{fetch(:puma_config)}"
           cd #{fetch(:puma_root_path)} && #{fetch(:pumactl_cmd)} -F #{fetch(:puma_config)} #{command}
         else
           cd #{fetch(:puma_root_path)} && #{fetch(:pumactl_cmd)} -S #{fetch(:puma_state)} -C "unix://#{fetch(:pumactl_socket)}" --pidfile #{fetch(:puma_pid)} #{command}
