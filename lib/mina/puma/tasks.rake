@@ -19,7 +19,7 @@ namespace :puma do
   task :start => :environment do
     puma_port_option = "-p #{fetch(:puma_port)}" if set?(:puma_port)
 
-    comment "Starting Puma..."
+    comment "Starting Puma111..."
     command %[
       if [ -e "#{fetch(:puma_pid)}" ]; then
         echo 'Puma is already running!';
@@ -35,7 +35,7 @@ namespace :puma do
 
   desc 'Stop puma'
   task stop: :environment do
-    comment "Stopping Puma..."
+    comment "Stopping Puma111..."
     pumactl_command 'stop'
     command %[rm -f '#{fetch(:pumactl_socket)}']
   end
