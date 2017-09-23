@@ -19,18 +19,16 @@ namespace :puma do
   task :start => :environment do
     puma_port_option = "-p #{fetch(:puma_port)}" if set?(:puma_port)
 
+    # Updated this to look remove the conditional check for a puma.socket
+    # It prevented this from having any effect when using ports and not sockets
     comment "Starting Puma..."
     command %[
-      if [ -e "#{fetch(:puma_socket)}" ]; then
-        echo 'Puma is already running!';
+      if [ -e "#{fetch(:puma_config)}" ]; then
+        cd #{fetch(:puma_root_path)} && #{fetch(:puma_cmd)} -q -d -e #{fetch(:puma_env)} -C #{fetch(:puma_config)}
       else
-        if [ -e "#{fetch(:puma_config)}" ]; then
-          cd #{fetch(:puma_root_path)} && #{fetch(:puma_cmd)} -q -d -e #{fetch(:puma_env)} -C #{fetch(:puma_config)}
-        else
-          cd #{fetch(:puma_root_path)} && #{fetch(:puma_cmd)} -q -d -e #{fetch(:puma_env)} -b "unix://#{fetch(:puma_socket)}" #{puma_port_option} -S #{fetch(:puma_state)} --pidfile #{fetch(:puma_pid)} --control 'unix://#{fetch(:pumactl_socket)}'
-        fi
+        cd #{fetch(:puma_root_path)} && #{fetch(:puma_cmd)} -q -d -e #{fetch(:puma_env)} -b "unix://#{fetch(:puma_socket)}" #{puma_port_option} -S #{fetch(:puma_state)} --pidfile #{fetch(:puma_pid)} --control 'unix://#{fetch(:pumactl_socket)}'
       fi
-    ]
+     ]
   end
 
   desc 'Stop puma'
@@ -65,18 +63,13 @@ namespace :puma do
     pumactl_command 'status'
   end
 
-  # Updated this to look for puma_pid and not puma_socket since we are using puma with ports and not sockets
-  # This prevented this from having any effect, and puma would just ignore the commands
+  # Removed extra layer of conditional logic here too (see comments above)
   def pumactl_command(command)
     cmd =  %{
-      if [ -e "#{fetch(:puma_pid)}" ]; then 
-        if [ -e "#{fetch(:puma_config)}" ]; then
-          cd #{fetch(:puma_root_path)} && #{fetch(:pumactl_cmd)} -F #{fetch(:puma_config)} #{command}
-        else
-          cd #{fetch(:puma_root_path)} && #{fetch(:pumactl_cmd)} -S #{fetch(:puma_state)} -C "unix://#{fetch(:pumactl_socket)}" --pidfile #{fetch(:puma_pid)} #{command}
-        fi
+      if [ -e "#{fetch(:puma_config)}" ]; then
+        cd #{fetch(:puma_root_path)} && #{fetch(:pumactl_cmd)} -F #{fetch(:puma_config)} #{command}
       else
-        echo 'Puma is not running, Great!';
+        cd #{fetch(:puma_root_path)} && #{fetch(:pumactl_cmd)} -S #{fetch(:puma_state)} -C "unix://#{fetch(:pumactl_socket)}" --pidfile #{fetch(:puma_pid)} #{command}
       fi
     }
     command cmd
